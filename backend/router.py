@@ -71,12 +71,17 @@ def extract_filename(code: str) -> Optional[str]:
 def save_code_files(
     folder: str, code_blocks: List[Dict[str, str]]
 ) -> List[Dict[str, str]]:
-    """保存代码文件到指定目录"""
+    """保存代码文件到指定目录（基于项目根目录）"""
+    import os
+
     saved_files = []
+
+    base_dir = Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    output_dir = base_dir / folder
 
     for block in code_blocks:
         try:
-            file_path = Path(folder) / block["filename"]
+            file_path = output_dir / block["filename"]
             file_path.parent.mkdir(parents=True, exist_ok=True)
             file_path.write_text(block["code"], encoding="utf-8")
             saved_files.append({"path": str(file_path), "filename": block["filename"]})
