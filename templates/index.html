@@ -50,7 +50,6 @@
             overflow: hidden;
         }
 
-        /* 侧边栏 */
         .sidebar {
             width: 260px;
             background: var(--bg-secondary);
@@ -107,7 +106,44 @@
             opacity: 0.9;
         }
 
-        /* 功能列表 */
+        .folder-btn {
+            margin: 0 16px 16px 16px;
+            padding: 10px 14px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--text-primary);
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .folder-btn:hover {
+            background: var(--hover-color);
+        }
+
+        .folder-btn.active {
+            border-color: var(--bg-user);
+            background: var(--hover-color);
+        }
+
+        .folder-path {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-align: center;
+            padding: 0 16px 8px 16px;
+            word-break: break-all;
+            display: none;
+        }
+
+        .folder-path.show {
+            display: block;
+        }
+
         .mode-list {
             flex: 1;
             padding: 8px;
@@ -141,7 +177,6 @@
             text-align: center;
         }
 
-        /* 主题切换 */
         .theme-toggle {
             padding: 16px;
             border-top: 1px solid var(--border-color);
@@ -167,7 +202,6 @@
             background: var(--hover-color);
         }
 
-        /* 主聊天区域 */
         .chat-container {
             flex: 1;
             display: flex;
@@ -205,7 +239,6 @@
             color: var(--text-primary);
         }
 
-        /* 消息列表 */
         .messages-container {
             flex: 1;
             overflow-y: auto;
@@ -274,11 +307,60 @@
             font-size: 13px;
         }
 
-        /* 输入区域 */
+        .message-content .file-created {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: #d1fae5;
+            color: #065f46;
+            border-radius: 6px;
+            font-size: 13px;
+            margin: 8px 0;
+        }
+
+        [data-theme="dark"] .message-content .file-created {
+            background: #064e3b;
+            color: #6ee7b7;
+        }
+
         .input-container {
             padding: 20px 24px;
             border-top: 1px solid var(--border-color);
             background: var(--bg-primary);
+        }
+
+        .input-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .input-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            padding: 6px 14px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            cursor: pointer;
+            color: var(--text-primary);
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            background: var(--hover-color);
+        }
+
+        .action-btn.active {
+            background: var(--bg-user);
+            color: white;
+            border-color: var(--bg-user);
         }
 
         .input-wrapper {
@@ -338,7 +420,6 @@
             cursor: not-allowed;
         }
 
-        /* 加载动画 */
         .loading {
             display: flex;
             align-items: center;
@@ -368,7 +449,6 @@
             40% { transform: scale(1); }
         }
 
-        /* 欢迎页面 */
         .welcome {
             flex: 1;
             display: flex;
@@ -412,10 +492,13 @@
             border-color: var(--bg-user);
             background: var(--hover-color);
         }
+
+        #folder-input {
+            display: none;
+        }
     </style>
 </head>
 <body>
-    <!-- 侧边栏 -->
     <div class="sidebar">
         <div class="sidebar-header">
             <div class="logo">
@@ -427,6 +510,14 @@
         <button class="new-chat-btn" onclick="newChat()">
             <span>+</span> 新建对话
         </button>
+
+        <button class="folder-btn" id="folder-btn" onclick="selectFolder()">
+            <span>📁</span>
+            <span id="folder-btn-text">选择工作目录</span>
+        </button>
+        <div class="folder-path" id="folder-path"></div>
+
+        <input type="file" id="folder-input" webkitdirectory directory multiple />
 
         <div class="mode-list">
             <div class="mode-item active" data-mode="general" onclick="switchMode('general')">
@@ -455,14 +546,12 @@
         </div>
     </div>
 
-    <!-- 聊天区域 -->
     <div class="chat-container">
         <div class="chat-header">
             <div class="chat-title" id="chat-title">AI 对话</div>
             <button class="clear-btn" onclick="clearHistory()">清空对话</button>
         </div>
 
-        <!-- 欢迎页面 -->
         <div class="welcome" id="welcome">
             <h1>你好，我是 Codehelper</h1>
             <p>选择左侧功能，开始编程之旅</p>
@@ -482,11 +571,15 @@
             </div>
         </div>
 
-        <!-- 消息列表 -->
         <div class="messages-container" id="messages" style="display: none;"></div>
 
-        <!-- 输入区域 -->
         <div class="input-container">
+            <div class="input-toolbar">
+                <div class="input-actions">
+                    <button class="action-btn active" id="plan-btn" onclick="setActionMode('plan')">Plan</button>
+                    <button class="action-btn" id="build-btn" onclick="setActionMode('build')">Build</button>
+                </div>
+            </div>
             <div class="input-wrapper">
                 <textarea 
                     class="chat-input" 
@@ -506,12 +599,12 @@
     </div>
 
     <script>
-        // 状态管理
         let currentMode = 'general';
         let messages = [];
         let isLoading = false;
+        let actionMode = 'plan';
+        let selectedFolder = '';
 
-        // 模式配置
         const modeConfig = {
             general: { title: 'AI 对话', icon: '💬' },
             generate: { title: '代码生成', icon: '⚡' },
@@ -519,14 +612,12 @@
             fix: { title: '代码改错', icon: '🔧' }
         };
 
-        // 初始化主题
         function initTheme() {
             const savedTheme = localStorage.getItem('theme') || 'light';
             document.documentElement.setAttribute('data-theme', savedTheme);
             updateThemeButton(savedTheme);
         }
 
-        // 切换主题
         function toggleTheme() {
             const current = document.documentElement.getAttribute('data-theme');
             const newTheme = current === 'dark' ? 'light' : 'dark';
@@ -547,7 +638,28 @@
             }
         }
 
-        // 切换模式
+        function setActionMode(mode) {
+            actionMode = mode;
+            document.getElementById('plan-btn').classList.toggle('active', mode === 'plan');
+            document.getElementById('build-btn').classList.toggle('active', mode === 'build');
+        }
+
+        function selectFolder() {
+            const input = document.getElementById('folder-input');
+            input.click();
+        }
+
+        document.getElementById('folder-input').addEventListener('change', function(e) {
+            if (this.files && this.files.length > 0) {
+                const folderPath = this.files[0].webkitRelativePath.split('/')[0];
+                selectedFolder = folderPath;
+                document.getElementById('folder-btn').classList.add('active');
+                document.getElementById('folder-btn-text').textContent = folderPath;
+                document.getElementById('folder-path').textContent = '工作目录: ' + folderPath;
+                document.getElementById('folder-path').classList.add('show');
+            }
+        });
+
         function switchMode(mode) {
             currentMode = mode;
             document.querySelectorAll('.mode-item').forEach(item => {
@@ -557,12 +669,10 @@
             clearHistory();
         }
 
-        // 新建对话
         function newChat() {
             clearHistory();
         }
 
-        // 清空历史
         function clearHistory() {
             messages = [];
             document.getElementById('messages').style.display = 'none';
@@ -570,7 +680,6 @@
             document.getElementById('messages').innerHTML = '';
         }
 
-        // 使用示例
         function useExample(mode) {
             switchMode(mode);
             const examples = {
@@ -582,7 +691,6 @@
             document.getElementById('chat-input').value = examples[mode];
         }
 
-        // 处理 Enter 键
         function handleKeydown(event) {
             if (event.key === 'Enter' && !event.shiftKey) {
                 event.preventDefault();
@@ -590,7 +698,6 @@
             }
         }
 
-        // 发送消息
         async function sendMessage() {
             if (isLoading) return;
 
@@ -598,30 +705,37 @@
             const content = input.value.trim();
             if (!content) return;
 
-            // 添加用户消息
             messages.push({ role: 'user', content });
             renderMessages();
 
-            // 清空输入框
             input.value = '';
             isLoading = true;
             updateSendButton();
-
-            // 显示加载状态
             showLoading();
 
             try {
+                const requestBody = {
+                    messages: messages,
+                    mode: currentMode,
+                    action: actionMode,
+                    folder: selectedFolder
+                };
+
                 const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        messages: messages,
-                        mode: currentMode
-                    })
+                    body: JSON.stringify(requestBody)
                 });
 
                 const data = await response.json();
-                messages.push({ role: 'assistant', content: data.result });
+                
+                let responseContent = data.result;
+                if (data.files && data.files.length > 0) {
+                    const fileInfo = data.files.map(f => `📄 已创建: ${f.path}`).join('\n');
+                    responseContent = responseContent + '\n\n' + fileInfo;
+                }
+                
+                messages.push({ role: 'assistant', content: responseContent, files: data.files });
                 hideLoading();
                 renderMessages();
             } catch (error) {
@@ -637,7 +751,6 @@
             updateSendButton();
         }
 
-        // 渲染消息
         function renderMessages() {
             const container = document.getElementById('messages');
             document.getElementById('welcome').style.display = 'none';
@@ -650,6 +763,7 @@
                     </div>
                     <div class="message-content">
                         ${formatContent(msg.content)}
+                        ${msg.files ? msg.files.map(f => `<div class="file-created">📄 已创建: ${f.path}</div>`).join('') : ''}
                     </div>
                 </div>
             `).join('');
@@ -657,7 +771,6 @@
             container.scrollTop = container.scrollHeight;
         }
 
-        // 格式化内容（处理代码块）
         function formatContent(content) {
             const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
             const inlineCodeRegex = /`([^`]+)`/g;
@@ -670,7 +783,6 @@
             return formatted;
         }
 
-        // 显示加载
         function showLoading() {
             const container = document.getElementById('messages');
             const loadingDiv = document.createElement('div');
@@ -683,7 +795,7 @@
                         <div class="loading-dots">
                             <span></span><span></span><span></span>
                         </div>
-                        思考中...
+                        ${actionMode === 'build' ? '创建文件中...' : '思考中...'}
                     </div>
                 </div>
             `;
@@ -691,25 +803,21 @@
             container.scrollTop = container.scrollHeight;
         }
 
-        // 隐藏加载
         function hideLoading() {
             const loading = document.getElementById('loading-indicator');
             if (loading) loading.remove();
         }
 
-        // 更新发送按钮状态
         function updateSendButton() {
             const btn = document.getElementById('send-btn');
             btn.disabled = isLoading;
         }
 
-        // 自动调整输入框高度
         document.getElementById('chat-input').addEventListener('input', function() {
             this.style.height = 'auto';
             this.style.height = Math.min(this.scrollHeight, 200) + 'px';
         });
 
-        // 初始化
         initTheme();
     </script>
 </body>
