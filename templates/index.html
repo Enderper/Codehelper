@@ -511,16 +511,9 @@
             <span>+</span> 新建对话
         </button>
 
-        <button class="folder-btn" id="folder-btn" onclick="selectFolder()">
-            <span>📁</span>
-            <span id="folder-btn-text">选择工作目录</span>
-        </button>
-        <div class="folder-path" id="folder-path"></div>
-        <input type="file" id="folder-input" webkitdirectory directory multiple />
-        
-        <div class="output-dir-section" style="padding: 0 16px 16px;">
-            <label style="font-size: 12px; color: var(--text-secondary);">输出目录</label>
-            <input type="text" id="output-dir" value="output" style="width: 100%; padding: 8px; margin-top: 4px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); font-size: 13px;" placeholder="输入输出目录名，如: output" />
+        <div class="output-dir-section" style="padding: 16px;">
+            <label style="font-size: 12px; color: var(--text-secondary);">工作目录（完整路径）</label>
+            <input type="text" id="output-dir" value="" style="width: 100%; padding: 10px; margin-top: 4px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); font-size: 13px;" placeholder="如: C:\Users\chenz\project" />
         </div>
 
         <div class="mode-list">
