@@ -2,10 +2,14 @@
 API 路由模块 - 定义所有 API 端点
 """
 
-import subprocess
-from fastapi import APIRouter
+import os
+import re
+import tempfile
+from pathlib import Path
+from fastapi import APIRouter, Request
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from typing import List, Dict, Any
+from typing import List, Dict, Optional
 from backend.model import chat_with_history
 
 
@@ -29,23 +33,74 @@ class FixRequest(BaseModel):
 class ChatRequest(BaseModel):
     messages: List[Dict[str, str]]
     mode: str = "general"
-    action: str = "explain"
+    action: str = "plan"
+    folder: str = ""
 
 
-def execute_code(code: str, language: str = "python") -> Dict[str, Any]:
-    """执行代码并返回结果"""
-    try:
-        result = subprocess.run(
-            ["python", "-c", code], capture_output=True, text=True, timeout=10
-        )
-        return {
-            "success": result.returncode == 0,
-            "stdout": result.stdout,
-            "stderr": result.stderr,
-            "returncode": str(result.returncode),
-        }
-    except Exception as e:
-        return {"success": False, "stdout": "", "stderr": str(e), "returncode": "-1"}
+def extract_code_blocks(content: str) -> List[Dict[str, str]]:
+    """从响应中提取代码块"""
+    code_blocks = []
+    pattern = r"```(\w+)?\n([\s\S]*?)```"
+    matches = re.findall(pattern, content)
+
+    for lang, code in matches:
+        filename = extract_filename(code) or "untitled"
+        if lang:
+            filename = f"{Path(filename).stem}.{lang}"
+        code_blocks.append({"filename": filename, "code": code.strip()})
+
+    return code_blocks
+
+
+def extract_filename(code: str) -> Optional[str]:
+    """尝试从代码中提取文件名"""
+    patterns = [
+        r"#\s*filename:\s*(.+)",
+        r"//\s*filename:\s*(.+)",
+        r"/\*\s*filename:\s*(.+?)\s*\*/",
+    ]
+
+    for pattern in patterns:
+        match = re.search(pattern, code, re.IGNORECASE)
+        if match:
+            return match.group(1).strip()
+
+    return None
+
+
+def save_code_files(
+    folder: str, code_blocks: List[Dict[str, str]]
+) -> List[Dict[str, str]]:
+    """保存代码文件到用户指定的工作目录"""
+    import os
+
+    saved_files = []
+
+    if not folder:
+        return [{"error": "未指定工作目录"}]
+
+    output_dir = Path(folder)
+
+    if not output_dir.is_absolute():
+        base_dir = Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        output_dir = base_dir / folder
+
+    for block in code_blocks:
+        try:
+            file_path = output_dir / block["filename"]
+            file_path.parent.mkdir(parents=True, exist_ok=True)
+            file_path.write_text(block["code"], encoding="utf-8")
+            saved_files.append({"path": str(file_path), "filename": block["filename"]})
+        except Exception as e:
+            saved_files.append(
+                {
+                    "path": block["filename"],
+                    "filename": block["filename"],
+                    "error": str(e),
+                }
+            )
+
+    return saved_files
 
 
 @router.post("/api/generate")
@@ -87,60 +142,35 @@ async def api_chat(request: ChatRequest):
     - fix: 代码修复模式
 
     支持操作：
-    - explain: 只解释代码
-    - run: 执行代码并解释结果
+    - plan: 只对话，不创建文件
+    - build: 对话并创建代码文件
     """
     messages = request.messages.copy()
     action = request.action
+    folder = request.folder
 
-    # 处理运行模式
-    if action == "run" and request.mode == "explain":
-        user_code = messages[-1]["content"] if messages else ""
-
-        # 执行代码
-        exec_result = execute_code(user_code)
-
-        # 构建执行结果消息
-        if exec_result["success"]:
-            exec_output = (
-                "✅ 代码执行成功！\n\n输出结果：\n```\n"
-                + exec_result["stdout"]
-                + "\n```\n"
-            )
-        else:
-            exec_output = (
-                "❌ 代码执行失败！\n\n错误信息：\n```\n"
-                + exec_result["stderr"]
-                + "\n```\n"
-            )
-
-        # 发送给 AI 分析
-        analysis_prompt = (
-            exec_output
-            + "\n这是一段代码的执行结果。请先返回上面的执行结果，然后解释这段代码的功能。如果执行失败，请分析错误原因并给出修复建议。"
-        )
-
-        analysis_messages = messages.copy()
-        analysis_messages[-1]["content"] = analysis_prompt
-
-        system_prompt = "你是一个专业的程序员。用户给你一段代码的执行结果，请先显示执行结果，然后解释代码的功能。如果有错误，分析原因并给出修复建议。"
-        analysis_messages.insert(0, {"role": "system", "content": system_prompt})
-
-        result = chat_with_history(analysis_messages)
-        return {"result": result, "role": "assistant", "executed": True}
-
-    # 正常模式
     if request.mode == "generate":
-        system_prompt = "你是一个专业的程序员。用户会描述想要实现的代码功能，请用指定的编程语言生成代码。只输出代码，不要包含其他解释。"
+        system_prompt = """你是一个专业的程序员。用户会描述想要实现的代码功能，
+请用指定的编程语言生成代码。只输出代码，不要包含其他解释。
+如果用户要求创建文件，请在代码顶部添加注释说明文件名，例如：# filename: main.py"""
         messages.insert(0, {"role": "system", "content": system_prompt})
 
     elif request.mode == "explain":
-        system_prompt = "你是一个专业的程序员。用户会给你代码，请详细解释代码的功能。请用通俗易懂的语言解释。"
+        system_prompt = """你是一个专业的程序员。用户会给你代码，请详细解释代码的功能。
+请用通俗易懂的语言解释。"""
         messages.insert(0, {"role": "system", "content": system_prompt})
 
     elif request.mode == "fix":
-        system_prompt = "你是一个专业的程序员。用户会给你代码和错误信息，请修复代码中的错误。先解释错误原因，然后给出修复后的代码。"
+        system_prompt = """你是一个专业的程序员。用户会给你代码和错误信息，请修复代码中的错误。
+先解释错误原因，然后给出修复后的代码。"""
         messages.insert(0, {"role": "system", "content": system_prompt})
 
     result = chat_with_history(messages)
-    return {"result": result, "role": "assistant"}
+
+    files = []
+    if action == "build" and folder:
+        code_blocks = extract_code_blocks(result)
+        if code_blocks:
+            files = save_code_files(folder, code_blocks)
+
+    return {"result": result, "role": "assistant", "files": files}
