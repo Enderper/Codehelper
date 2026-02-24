@@ -281,6 +281,41 @@
             background: var(--bg-primary);
         }
 
+        .input-toolbar {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            margin-bottom: 12px;
+            max-width: 900px;
+            margin: 0 auto 12px auto;
+        }
+
+        .input-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            padding: 6px 16px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            cursor: pointer;
+            color: var(--text-primary);
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            background: var(--hover-color);
+        }
+
+        .action-btn.active {
+            background: var(--bg-user);
+            color: white;
+            border-color: var(--bg-user);
+        }
+
         .input-wrapper {
             max-width: 900px;
             margin: 0 auto;
@@ -487,11 +522,17 @@
 
         <!-- 输入区域 -->
         <div class="input-container">
+            <div class="input-toolbar">
+                <div class="input-actions">
+                    <button class="action-btn active" id="explain-btn" onclick="setActionMode('explain')">解释</button>
+                    <button class="action-btn" id="run-btn" onclick="setActionMode('run')">运行</button>
+                </div>
+            </div>
             <div class="input-wrapper">
                 <textarea 
                     class="chat-input" 
                     id="chat-input" 
-                    placeholder="输入消息..." 
+                    placeholder="输入代码..." 
                     rows="1"
                     onkeydown="handleKeydown(event)"
                 ></textarea>
@@ -510,6 +551,7 @@
         let currentMode = 'general';
         let messages = [];
         let isLoading = false;
+        let actionMode = 'explain';
 
         // 模式配置
         const modeConfig = {
@@ -545,6 +587,13 @@
                 icon.textContent = '🌙';
                 text.textContent = '深色模式';
             }
+        }
+
+        // 切换解释/运行模式
+        function setActionMode(mode) {
+            actionMode = mode;
+            document.getElementById('explain-btn').classList.toggle('active', mode === 'explain');
+            document.getElementById('run-btn').classList.toggle('active', mode === 'run');
         }
 
         // 切换模式
@@ -616,7 +665,8 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         messages: messages,
-                        mode: currentMode
+                        mode: currentMode,
+                        action: actionMode
                     })
                 });
 
