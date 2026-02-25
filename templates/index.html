@@ -177,6 +177,102 @@
             text-align: center;
         }
 
+        .mode-expand {
+            margin-left: auto;
+            font-size: 10px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 2px 4px;
+        }
+
+        .mode-expand:hover {
+            color: var(--text-primary);
+        }
+
+        .mode-item-wrapper {
+            position: relative;
+        }
+
+        .chat-list-panel {
+            display: none;
+            position: absolute;
+            left: 0;
+            right: 0;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-top: 4px;
+            z-index: 100;
+            box-shadow: var(--shadow);
+        }
+
+        .chat-list-panel.show {
+            display: block;
+        }
+
+        .chat-list {
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 8px;
+        }
+
+        .chat-list-item {
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--text-primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+        }
+
+        .chat-list-item:hover {
+            background: var(--hover-color);
+        }
+
+        .chat-list-item.active {
+            background: var(--bg-tertiary);
+        }
+
+        .chat-list-item-name {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .chat-list-item-actions {
+            display: flex;
+            gap: 4px;
+            opacity: 0;
+        }
+
+        .chat-list-item:hover .chat-list-item-actions {
+            opacity: 1;
+        }
+
+        .chat-list-item-close, .chat-list-item-rename {
+            font-size: 12px;
+            color: var(--text-secondary);
+            padding: 2px 4px;
+            cursor: pointer;
+        }
+
+        .chat-list-item-close:hover {
+            color: #ff4444;
+        }
+
+        .chat-list-item-rename:hover {
+            color: var(--bg-user);
+        }
+
+        .chat-list-panel .new-chat-btn {
+            margin: 8px;
+            width: calc(100% - 16px);
+        }
+
         .theme-toggle {
             padding: 16px;
             border-top: 1px solid var(--border-color);
@@ -207,6 +303,81 @@
             display: flex;
             flex-direction: column;
             background: var(--bg-primary);
+        }
+
+        .chat-tabs {
+            display: flex;
+            align-items: center;
+            padding: 8px 16px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            gap: 8px;
+            overflow-x: auto;
+        }
+
+        .chat-tabs-list {
+            display: flex;
+            gap: 4px;
+            flex: 1;
+            overflow-x: auto;
+        }
+
+        .chat-tab {
+            padding: 6px 12px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--text-primary);
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .chat-tab:hover {
+            background: var(--hover-color);
+        }
+
+        .chat-tab.active {
+            background: var(--bg-user);
+            color: white;
+            border-color: var(--bg-user);
+        }
+
+        .chat-tab-name {
+            max-width: 120px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .chat-tab-close {
+            font-size: 12px;
+            opacity: 0.7;
+            padding: 2px;
+        }
+
+        .chat-tab-close:hover {
+            opacity: 1;
+        }
+
+        .new-tab-btn {
+            padding: 6px 12px;
+            background: transparent;
+            border: 1px dashed var(--border-color);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .new-tab-btn:hover {
+            border-color: var(--bg-user);
+            color: var(--bg-user);
         }
 
         .chat-header {
@@ -507,19 +678,21 @@
             </div>
         </div>
         
-        <button class="new-chat-btn" onclick="newChat()">
-            <span>+</span> 新建对话
-        </button>
-
-        <div class="output-dir-section" style="padding: 16px;">
-            <label style="font-size: 12px; color: var(--text-secondary);">工作目录（完整路径）</label>
-            <input type="text" id="output-dir" value="" style="width: 100%; padding: 10px; margin-top: 4px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); font-size: 13px;" placeholder="如: C:\Users\chenz\project" />
-        </div>
-
         <div class="mode-list">
-            <div class="mode-item active" data-mode="general" onclick="switchMode('general')">
-                <span class="mode-icon">💬</span>
-                <span>AI 对话</span>
+            <div class="mode-item-wrapper">
+                <div class="mode-item active" data-mode="general" onclick="switchMode('general')">
+                    <span class="mode-icon">💬</span>
+                    <span>AI 对话</span>
+                    <span class="mode-expand" onclick="event.stopPropagation(); toggleChatList()">▼</span>
+                </div>
+                <div class="chat-list-panel" id="chat-list-panel">
+                    <div class="chat-list" id="chat-list">
+                        <!-- 对话列表由 JS 生成 -->
+                    </div>
+                    <button class="new-chat-btn" onclick="createNewChat()">
+                        <span>+</span> 新建对话
+                    </button>
+                </div>
             </div>
             <div class="mode-item" data-mode="generate" onclick="switchMode('generate')">
                 <span class="mode-icon">⚡</span>
@@ -546,7 +719,7 @@
     <div class="chat-container">
         <div class="chat-header">
             <div class="chat-title" id="chat-title">AI 对话</div>
-            <button class="clear-btn" onclick="clearHistory()">清空对话</button>
+            <button class="clear-btn" onclick="clearCurrentChat()">清空对话</button>
         </div>
 
         <div class="welcome" id="welcome">
@@ -570,11 +743,10 @@
 
         <div class="messages-container" id="messages" style="display: none;"></div>
 
-        <div class="input-container">
+        <div class="input-container" id="input-toolbar-container">
             <div class="input-toolbar">
-                <div class="input-actions">
-                    <button class="action-btn active" id="plan-btn" onclick="setActionMode('plan')">Plan</button>
-                    <button class="action-btn" id="build-btn" onclick="setActionMode('build')">Build</button>
+                <div class="input-actions" id="input-actions">
+                    <!-- 按钮将由 JavaScript 根据模式动态生成 -->
                 </div>
             </div>
             <div class="input-wrapper">
@@ -592,15 +764,21 @@
                     </svg>
                 </button>
             </div>
+            <input type="file" id="file-input" style="display: none;" />
         </div>
     </div>
 
     <script>
         let currentMode = 'general';
-        let messages = [];
         let isLoading = false;
-        let actionMode = 'plan';
-        let selectedFolder = '';
+        let actionMode = 'explain';
+        let selectedFile = '';
+        let selectedFileContent = '';
+
+        // 对话管理
+        let chats = {};
+        let currentChatId = null;
+        let chatCounter = 0;
 
         const modeConfig = {
             general: { title: 'AI 对话', icon: '💬' },
@@ -608,6 +786,216 @@
             explain: { title: '代码解释', icon: '📖' },
             fix: { title: '代码改错', icon: '🔧' }
         };
+
+        // 初始化对话
+        function initChats() {
+            const saved = localStorage.getItem('codehelper_chats');
+            if (saved) {
+                chats = JSON.parse(saved);
+                const chatIds = Object.keys(chats);
+                if (chatIds.length > 0) {
+                    currentChatId = chatIds[0];
+                    // 不再从保存的数据读取 mode
+                }
+            }
+            if (!currentChatId || Object.keys(chats).length === 0) {
+                createNewChat();
+            }
+            renderChatList();
+            loadCurrentChat();
+        }
+
+        // 切换对话列表显示
+        function toggleChatList() {
+            const panel = document.getElementById('chat-list-panel');
+            panel.classList.toggle('show');
+            if (panel.classList.contains('show')) {
+                renderChatList();
+            }
+        }
+
+        // 渲染对话列表（显示所有对话）
+        function renderChatList() {
+            const container = document.getElementById('chat-list');
+            const allChats = Object.values(chats);
+            
+            if (allChats.length === 0) {
+                container.innerHTML = '<div style="padding: 12px; text-align: center; color: var(--text-secondary); font-size: 13px;">暂无对话</div>';
+                return;
+            }
+
+            container.innerHTML = allChats.map(chat => 
+                '<div class="chat-list-item ' + (chat.id === currentChatId ? 'active' : '') + '" onclick="selectChat(\'' + chat.id + '\')">' +
+                '<span class="chat-list-item-name" id="chat-name-' + chat.id + '">' + chat.name + '</span>' +
+                '<span class="chat-list-item-actions">' +
+                '<span class="chat-list-item-rename" onclick="event.stopPropagation(); renameChat(\'' + chat.id + '\')">✏️</span>' +
+                '<span class="chat-list-item-close" onclick="event.stopPropagation(); deleteChat(\'' + chat.id + '\')">×</span>' +
+                '</span>' +
+                '</div>'
+            ).join('');
+        }
+
+        // 重命名对话
+        function renameChat(chatId) {
+            const chat = chats[chatId];
+            if (!chat) return;
+            
+            const newName = prompt('请输入新名称:', chat.name);
+            if (newName && newName.trim()) {
+                chat.name = newName.trim();
+                saveChats();
+                renderChatList();
+            }
+        }
+
+        // 选择对话
+        function selectChat(chatId) {
+            // 先保存当前对话
+            if (currentChatId && chats[currentChatId]) {
+                chats[currentChatId].messages = getMessages();
+                chats[currentChatId].actionMode = actionMode;
+                chats[currentChatId].selectedFile = selectedFile;
+                chats[currentChatId].selectedFileContent = selectedFileContent;
+                saveChats();
+            }
+            
+            // 切换对话
+            currentChatId = chatId;
+            const chat = chats[chatId];
+            actionMode = chat.actionMode || 'explain';
+            selectedFile = chat.selectedFile || '';
+            selectedFileContent = chat.selectedFileContent || '';
+            setMessages(chat.messages || []);
+            
+            // 更新 UI（不改变 currentMode）
+            renderChatList();
+            renderToolbar();
+            renderMessages();
+            
+            // 关闭面板
+            document.getElementById('chat-list-panel').classList.remove('show');
+        }
+
+        // 删除对话
+        function deleteChat(chatId) {
+            const allChats = Object.values(chats);
+            if (allChats.length <= 1) {
+                return; // 至少保留一个对话
+            }
+            delete chats[chatId];
+            if (currentChatId === chatId) {
+                currentChatId = allChats[0].id === chatId ? allChats[1].id : allChats[0].id;
+                loadCurrentChat();
+            }
+            saveChats();
+            renderChatList();
+        }
+
+        // 保存对话到 localStorage
+        function saveChats() {
+            localStorage.setItem('codehelper_chats', JSON.stringify(chats));
+        }
+
+        // 创建新对话（所有选项卡共享）
+        function createNewChat() {
+            chatCounter++;
+            const chatId = 'chat-' + chatCounter;
+            chats[chatId] = {
+                id: chatId,
+                name: '对话 ' + chatCounter,
+                messages: [],
+                actionMode: 'explain',
+                selectedFile: '',
+                selectedFileContent: ''
+            };
+            currentChatId = chatId;
+            saveChats();
+            renderChatList();
+            loadCurrentChat();
+            // 关闭面板
+            document.getElementById('chat-list-panel').classList.remove('show');
+        }
+
+        // 加载当前对话
+        function loadCurrentChat() {
+            if (currentChatId && chats[currentChatId]) {
+                const chat = chats[currentChatId];
+                // 不再从 chat 读取 mode，使用当前的 currentMode
+                actionMode = chat.actionMode || 'explain';
+                selectedFile = chat.selectedFile || '';
+                selectedFileContent = chat.selectedFileContent || '';
+                setMessages(chat.messages || []);
+                document.getElementById('chat-title').textContent = modeConfig[currentMode].title;
+                renderToolbar();
+                renderMessages();
+            }
+        }
+
+        // 获取当前消息
+        function getMessages() {
+            const container = document.getElementById('messages');
+            if (container.style.display === 'none') {
+                return [];
+            }
+            return window.currentMessages || [];
+        }
+
+        // 设置消息
+        function setMessages(msgs) {
+            window.currentMessages = msgs;
+        }
+
+        // 清空当前对话
+        function clearCurrentChat() {
+            setMessages([]);
+            if (currentChatId && chats[currentChatId]) {
+                chats[currentChatId].messages = [];
+                saveChats();
+            }
+            renderMessages();
+            document.getElementById('welcome').style.display = 'flex';
+            document.getElementById('messages').style.display = 'none';
+        }
+
+        // 初始化
+
+        // 根据模式渲染工具栏按钮
+        function renderToolbar() {
+            const container = document.getElementById('input-actions');
+            let html = '';
+
+            if (currentMode === 'explain') {
+                html += '<button class="action-btn ' + (actionMode === 'explain' ? 'active' : '') + '" id="explain-btn" onclick="setActionMode(\'explain\')">解释</button>';
+                html += '<button class="action-btn ' + (actionMode === 'run' ? 'active' : '') + '" id="run-btn" onclick="setActionMode(\'run\')">运行</button>';
+            }
+
+            // 上传按钮只在代码解释和代码改错模式下显示
+            if (currentMode === 'explain' || currentMode === 'fix') {
+                html += '<button class="action-btn" id="upload-btn" onclick="selectFile()">' + (selectedFile ? '📄 ' + selectedFile : '📤 上传') + '</button>';
+            }
+
+            container.innerHTML = html;
+        }
+
+        // 选择文件
+        function selectFile() {
+            document.getElementById('file-input').click();
+        }
+
+        // 文件选择后读取内容
+        document.getElementById('file-input').addEventListener('change', function(e) {
+            if (this.files && this.files.length > 0) {
+                const file = this.files[0];
+                selectedFile = file.name;
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    selectedFileContent = e.target.result;
+                    renderToolbar();
+                };
+                reader.readAsText(file);
+            }
+        });
 
         function initTheme() {
             const savedTheme = localStorage.getItem('theme') || 'light';
@@ -637,13 +1025,7 @@
 
         function setActionMode(mode) {
             actionMode = mode;
-            document.getElementById('plan-btn').classList.toggle('active', mode === 'plan');
-            document.getElementById('build-btn').classList.toggle('active', mode === 'build');
-        }
-
-        function selectFolder() {
-            const input = document.getElementById('folder-input');
-            input.click();
+            renderToolbar();
         }
 
         document.getElementById('folder-input').addEventListener('change', function(e) {
@@ -658,23 +1040,41 @@
         });
 
         function switchMode(mode) {
+            // 保存当前对话状态
+            if (currentChatId && chats[currentChatId]) {
+                chats[currentChatId].actionMode = actionMode;
+                chats[currentChatId].selectedFile = selectedFile;
+                chats[currentChatId].selectedFileContent = selectedFileContent;
+                saveChats();
+            }
+            
+            // 切换模式但不改变对话
             currentMode = mode;
             document.querySelectorAll('.mode-item').forEach(item => {
                 item.classList.toggle('active', item.dataset.mode === mode);
             });
             document.getElementById('chat-title').textContent = modeConfig[mode].title;
-            clearHistory();
+            
+            // 重置上传状态
+            selectedFile = '';
+            selectedFileContent = '';
+            
+            // 重新渲染工具栏
+            renderToolbar();
+            
+            // 加载当前对话（保持历史）
+            loadCurrentChat();
+            loadCurrentChat();
         }
 
         function newChat() {
-            clearHistory();
+            saveCurrentChat();
+            createNewChat();
         }
 
         function clearHistory() {
-            messages = [];
-            document.getElementById('messages').style.display = 'none';
-            document.getElementById('welcome').style.display = 'flex';
-            document.getElementById('messages').innerHTML = '';
+            // 这个函数保留但重定向到 clearCurrentChat
+            clearCurrentChat();
         }
 
         function useExample(mode) {
@@ -699,10 +1099,18 @@
             if (isLoading) return;
 
             const input = document.getElementById('chat-input');
-            const content = input.value.trim();
-            if (!content) return;
+            let content = input.value.trim();
+            
+            // 如果有上传文件，把文件内容添加到消息中
+            if (selectedFile && selectedFileContent) {
+                content = '文件名: ' + selectedFile + '\n\n文件内容:\n```\n' + selectedFileContent + '\n```\n\n用户请求: ' + content;
+            }
+            
+            if (!content && !selectedFileContent) return;
 
-            messages.push({ role: 'user', content });
+            const msgs = window.currentMessages || [];
+            msgs.push({ role: 'user', content: content });
+            setMessages(msgs);
             renderMessages();
 
             input.value = '';
@@ -711,12 +1119,12 @@
             showLoading();
 
             try {
-                const outputDir = document.getElementById('output-dir').value || 'output';
                 const requestBody = {
-                    messages: messages,
+                    messages: getMessages(),
                     mode: currentMode,
                     action: actionMode,
-                    folder: outputDir
+                    fileContent: selectedFileContent || null,
+                    fileName: selectedFile || null
                 };
 
                 const response = await fetch('/api/chat', {
@@ -729,11 +1137,13 @@
                 
                 let responseContent = data.result;
                 if (data.files && data.files.length > 0) {
-                    const fileInfo = data.files.map(f => `📄 已创建: ${f.path}`).join('\n');
+                    const fileInfo = data.files.map(f => '📄 已创建: ' + f.path).join('\n');
                     responseContent = responseContent + '\n\n' + fileInfo;
                 }
                 
-                messages.push({ role: 'assistant', content: responseContent, files: data.files });
+                const msgs2 = window.currentMessages || [];
+                msgs2.push({ role: 'assistant', content: responseContent, files: data.files });
+                setMessages(msgs2);
                 hideLoading();
                 renderMessages();
             } catch (error) {
@@ -751,17 +1161,26 @@
 
         function renderMessages() {
             const container = document.getElementById('messages');
+            const msgs = window.currentMessages || [];
+            
+            if (msgs.length === 0) {
+                document.getElementById('welcome').style.display = 'flex';
+                container.style.display = 'none';
+                container.innerHTML = '';
+                return;
+            }
+            
             document.getElementById('welcome').style.display = 'none';
             container.style.display = 'block';
 
-            container.innerHTML = messages.map(msg => `
+            container.innerHTML = msgs.map(msg => `
                 <div class="message ${msg.role}">
                     <div class="message-avatar">
                         ${msg.role === 'user' ? 'U' : 'AI'}
                     </div>
                     <div class="message-content">
                         ${formatContent(msg.content)}
-                        ${msg.files ? msg.files.map(f => `<div class="file-created">📄 已创建: ${f.path}</div>`).join('') : ''}
+                        ${msg.files ? msg.files.map(f => '<div class="file-created">📄 已创建: ' + f.path + '</div>').join('') : ''}
                     </div>
                 </div>
             `).join('');
@@ -817,6 +1236,8 @@
         });
 
         initTheme();
+        initChats();
+        renderToolbar();
     </script>
 </body>
 </html>
